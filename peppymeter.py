@@ -34,7 +34,7 @@ from configfileparser import *
 class Peppymeter(ScreensaverMeter):
     """ Peppy Meter class """
     
-    def __init__(self, util=None, standalone=False, timer_controlled_random_meter=True, quit_pygame_on_stop=True):
+    def __init__(self, util=None, standalone=False, timer_controlled_random_meter=False, quit_pygame_on_stop=True):
         """ Initializer
         
         :param util: utility object
@@ -189,10 +189,10 @@ class Peppymeter(ScreensaverMeter):
         self.meter.start()
         pygame.display.update(self.util.meter_config[SCREEN_RECT])
         running = True
-        exit_events = [pygame.MOUSEBUTTONUP]
+        touch_events = [pygame.MOUSEBUTTONUP]
 
         if pygame.version.ver.startswith("2"):
-            exit_events.append(pygame.FINGERUP)
+            touch_events.append(pygame.FINGERUP)
 
         while running:
             for event in pygame.event.get():
@@ -202,8 +202,13 @@ class Peppymeter(ScreensaverMeter):
                     keys = pygame.key.get_pressed() 
                     if (keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]) and event.key == pygame.K_c:
                         running = False
-                elif event.type in exit_events and (self.util.meter_config[EXIT_ON_TOUCH] or self.util.meter_config[STOP_DISPLAY_ON_TOUCH]):
-                    running = False
+                elif event.type in touch_events:
+                    if self.util.meter_config[EXIT_ON_TOUCH]:
+                        # Toggle to next visualization instead of exiting
+                        logging.debug("Toggled to next visualization")
+                        self.meter.restart()
+                    elif self.util.meter_config[STOP_DISPLAY_ON_TOUCH]:
+                        running = False
 
             areas = self.meter.run()
             pygame.display.update(areas)
@@ -289,4 +294,4 @@ if __name__ == "__main__":
     pm.init_display()
         
     if pm.util.meter_config[OUTPUT_DISPLAY]:
-        pm.start_display_output()    
+        pm.start_display_output()
